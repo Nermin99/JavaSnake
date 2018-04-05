@@ -1,47 +1,75 @@
 import java.awt.*;
 
+/**
+ * Klassen behandlar den logiska sidan av programmet och sköter
+ * majoriteten av interaktionen mellan model och view.
+ *
+ * @author Nermin Skenderovic
+ * @version 1.0
+ * @since 2018-04-05
+ */
 public class GameLogic {
-    public Snake snake;
-    public Apple apple;
-    private boolean gameRunning = true;
-    private int fps = 15;
-    private int baseLength = 4;
-
+    private Snake snake;
+    private Apple apple;
     private GameView gameView;
+    private int score, highScore = 0;
+    private int fps = 15;
+    private int baseLength = 3;
+    private Color color = Color.green;
 
-
+    /**
+     * Konstruktor med referens till view.
+     * <p>
+     * När klassen blir instanserad får den även med instansen av view som
+     * underlättar kommunikationen sinsemellan.
+     *
+     * @param gameView referensen till GameView
+     */
     public GameLogic(GameView gameView) {
         this.gameView = gameView;
     }
 
+    /**
+     * Laddar in och startar spelet.
+     * <p>
+     * Initierar ormen med dess standard kordinater och riktning.
+     * Därefter sätts spelets gameloop igång.
+     */
     public void loadObjects() {
-        snake = new Snake(-1, 0);
+        int defXpos = (gameView.columns - baseLength) / 2;
+        int defYpos = gameView.rows / 2;
 
-        int defX = (gameView.columns - baseLength) / 2;
-        int defY = gameView.rows / 2;
+        int defDx = -1;
+        int defDy = 0;
 
-        for (int i = defX; i < defX + baseLength; i++) {
-            snake.extend(i, defY, Color.green);
-        }
+        snake = new Snake(defDx, defDy, baseLength, defXpos, defYpos, color);
 
         run();
     }
 
-    public void update() {
+    /**
+     * Uppdaterar ormens egenskaper.
+     */
+    private void update() {
         updateDirection();
 
         trailEaten();
+
+        highScore = (score > highScore) ? score : highScore;
 
         snake.move(appleEaten());
 
         wrapBorder();
     }
 
-    public void run() {
+    /**
+     * Gameloop; uppdaterar och renderar med 15 uppdateringar per sekund.
+     */
+    private void run() {
         long lastUpdateTime = System.nanoTime();
         int updateTime = (int)(1000000000.0/fps);
 
-        while (gameRunning) {
+        while (true) {
             long deltaTime = System.nanoTime() - lastUpdateTime;
 
             if (deltaTime >= updateTime) {
@@ -52,7 +80,10 @@ public class GameLogic {
         }
     }
 
-    public void updateDirection() {
+    /**
+     * Uppdaterar färdrikntingen på ormen beroende på vilken tangent som trycks ner.
+     */
+    private void updateDirection() {
         switch (gameView.getKey()) {
             case 37:
                 if (snake.getDx() != 1) {
@@ -83,48 +114,100 @@ public class GameLogic {
         }
     }
 
-    public boolean appleEaten() {
+    /**
+     * Kollar om äpplet har ätits eller inte.
+     * <p>
+     * Om äpplet inte existerar skapas ett nytt äpple. Om snake-huvudet har ätit äpplet
+     * så annuleras äpplet och poängen ökar.
+     *
+     * @return om äpplet har ätits (sant eller falskt)
+     */
+    private boolean appleEaten() {
         boolean appleEaten = false;
 
         if (apple == null) {
             apple = new Apple();
-        } else if (snake.snakeList.get(0).xPos == apple.xPos && snake.snakeList.get(0).yPos == apple.yPos) {
+        } else if (snake.getSnakeList().get(0).getXpos() == apple.getXpos() && snake.getSnakeList().get(0).getYpos() == apple.getYpos()) {
+            score++;
             apple = null;
             appleEaten = true;
         }
+
         return appleEaten;
     }
 
-    public void trailEaten() {
-        for (int i = 4; i < snake.snakeList.size(); i++) {
-            if (snake.snakeList.get(0).xPos == snake.snakeList.get(i).xPos && snake.snakeList.get(0).yPos == snake.snakeList.get(i).yPos) {
-                for (int j = snake.snakeList.size()-1; j > baseLength - 1; j--) {
-                    snake.snakeList.remove(j);
-                }
+    /**
+     * Kollar om ormen har ätit sig själv.
+     * <p>
+     * Om så är fallet tömms snakelistan och en ny skapas med standard längd
+     * och kordinater.
+     */
+    private void trailEaten() {
+        for (int i = 4; i < snake.getSnakeList().size(); i++) {
+            if (snake.getSnakeList().get(0).getXpos() == snake.getSnakeList().get(i).getXpos() && snake.getSnakeList().get(0).getYpos() == snake.getSnakeList().get(i).getYpos()) {
+                int defX = snake.getSnakeList().get(0).getXpos();
+                int defY = snake.getSnakeList().get(0).getYpos();
+
+                snake.getSnakeList().clear(); // Tömmer snaken
+
+                snake.createSnake(baseLength, defX, defY); //  Skapar ny liten snake
+
+                score = 0;
             }
         }
     }
 
-    public void wrapBorder() {
-        if (snake.snakeList.get(0).xPos > gameView.columns-1) {
-            snake.snakeList.get(0).xPos = 0;
+    /**
+     * Om ormen lämnar ena sidan av skärmen återkommer den på motsatt sida.
+     */
+    private void wrapBorder() {
+        if (snake.getSnakeList().get(0).getXpos() > gameView.columns-1) {
+            snake.getSnakeList().get(0).setXpos(0);
         }
-        if (snake.snakeList.get(0).xPos < 0) {
-            snake.snakeList.get(0).xPos = gameView.columns-1;
+        if (snake.getSnakeList().get(0).getXpos() < 0) {
+            snake.getSnakeList().get(0).setXpos(gameView.columns-1);
         }
-        if (snake.snakeList.get(0).yPos > gameView.rows-1) {
-            snake.snakeList.get(0).yPos = 0;
+        if (snake.getSnakeList().get(0).getYpos() > gameView.rows-1) {
+            snake.getSnakeList().get(0).setYpos(0);
         }
-        if (snake.snakeList.get(0).yPos < 0) {
-            snake.snakeList.get(0).yPos = gameView.rows-1;
+        if (snake.getSnakeList().get(0).getYpos() < 0) {
+            snake.getSnakeList().get(0).setYpos(gameView.rows-1);
         }
     }
 
+    /**
+     * Returnerar snake-objektet.
+     *
+     * @return referensen till modellen Snake
+     */
     public Snake getSnake() {
         return this.snake;
     }
 
+    /**
+     * Returnerar apple-objektet.
+     *
+     * @return referensen till modellen Apple
+     */
     public Apple getApple() {
         return this.apple;
+    }
+
+    /**
+     * Returnerar monetära poängen.
+     *
+     * @return antalet äpplen ätna utan att ha dött
+     */
+    public int getScore() {
+        return score;
+    }
+
+    /**
+     * Returnerar poäng-rekordet.
+     *
+     * @return rekordet i antalet äpplen uppätna
+     */
+    public int getHighScore() {
+        return highScore;
     }
 }
