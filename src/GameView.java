@@ -74,13 +74,6 @@ public class GameView implements KeyListener{
 
         g.dispose();
         backBuffer.show();
-
-
-        g = (Graphics2D)backBuffer.getDrawGraphics();
-        g.drawString("", 0, 0);
-
-        g.dispose();
-        backBuffer.show();
     }
 
     /**
@@ -164,4 +157,5 @@ public class GameView implements KeyListener{
         new GameView();
     }
 }
+// TODO Spara score till fil  https://docs.google.com/document/d/1nfh5WgQWH_5ksuz3Hq9gPs7mG3bT0MSZWBkcd7HTQrk/edit?usp=sharing
 
